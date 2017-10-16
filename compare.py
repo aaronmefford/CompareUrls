@@ -14,6 +14,7 @@ def options():
     options.add_argument('-l', '--length', dest='length', action='store', type=int, default=8, help='Length of each shingle')
     options.add_argument('-s', '--separator', dest='separator', action='store', default=' ', help='Token separator \'\' (empty string) for characters instead of words')
     options.add_argument('-x', '--hash', dest='hash', action='store', help='hash|murmur')
+    options.add_argument('-j', '--jacquard', dest='jacquard', action='store_true', default=False, help='calculate Jacquard score')
     return options.parse_args()
 
 def main():
@@ -27,7 +28,7 @@ def main():
         import mmh3
         hash_func = lambda x: mmh3.hash64(x)[0]
         
-    print "Similarity: %0.3f"%url_similarity(args.url1,args.url2,args.length,args.separator,hash_func)
+    print "Similarity: %0.3f"%url_similarity(args.url1,args.url2,args.length,args.separator,hash_func,args.jacquard)
     
 
 def inflate(data):
@@ -104,7 +105,6 @@ def shingle(iterable,length=8,separator=' '):
         shingle.append(token)
         if len(shingle) >= length:
             result = separator.join(shingle)
-            print result
             yield result
     
 def hash_list(iterable, hash_func = hash):
@@ -125,13 +125,30 @@ def hash_url(url,length=8,separator=' ',hash_func=hash):
 def compare_fingerprints(hash1,hash2):
     return hamming_distance(hash1,hash2)
 
-def url_similarity(url1,url2,length=8,separator=' ',hash_func=hash):
-    hash1 = hash_url(url1,length,separator,hash_func)
-    hash2 = hash_url(url2,length,separator,hash_func)
+def url_similarity(url1,url2,length=8,separator=' ',hash_func=hash,jacquard=False):
+    hash1=None
+    hash2=None
+    if jacquard:
+        data1 = list(shingle(tokenize(canonize(fetch(url1)),separator),length,separator))
+        hash1 = fingerprint(hash_list(data1,hash_func))
+        data2 = list(shingle(tokenize(canonize(fetch(url2)),separator),length,separator))
+        hash2 = fingerprint(hash_list(data2,hash_func))
+        print "Jacquard Similarity: %0.3f"%(similarity(data1,data2))
+    else: 
+        hash1 = hash_url(url1,length,separator,hash_func)
+        hash2 = hash_url(url2,length,separator,hash_func)
+
     return hash_similarity(hash1,hash2)
 
 def hash_similarity(hash1,hash2):
     return 1 - compare_fingerprints(hash1,hash2)/64.0
+
+def similarity(list1,list2):
+    bag1 = set(list1)
+    bag2 = set(list2)
+
+    return (1.0*len(bag1.intersection(bag2)))/len(bag1.union(bag2))
+
 
 
 if __name__ == '__main__': main()

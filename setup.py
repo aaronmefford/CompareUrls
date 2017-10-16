@@ -24,7 +24,7 @@ setup(
     description='A script to compare the content of two urls and return the similarity using simhash',
     long_description=long_description,
 
-    url='https://github.com/aaronmefford/CompareUrls'
+    url='https://github.com/aaronmefford/CompareUrls',
 
     author='Aaron Mefford',
     author_email='aaron@mefford.org',
@@ -49,7 +49,7 @@ setup(
     packages=[],
     scripts=['compare.py'],
 
-    install_requires=['simhash','mmh3'],
+    install_requires=['mmh3'],
 
     entry_points={
         'console_scripts': [
